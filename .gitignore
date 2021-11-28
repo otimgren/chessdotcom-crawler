@@ -1,3 +1,6 @@
+# Notebooks with random stuff in /src
+src/*.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
