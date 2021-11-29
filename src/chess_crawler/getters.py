@@ -101,6 +101,10 @@ class ArchivedOpponentsGetter(DataGetter):
                     opponents.append(game["white"]["username"])
                     ratings.append(game["white"]["rating"])
         
+        if len(opponents) == 0:
+            opponents.append(player.get_username())
+            ratings.append(player.get_rapid_rating())
+
         player.past_opponents = {}
         player.past_opponents["id"] = opponents
         player.past_opponents["rating"] = ratings

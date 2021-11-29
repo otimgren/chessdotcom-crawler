@@ -27,12 +27,25 @@ class PlayerSelector(ABC):
         """
         ArchivedTimeCtrlOpponentsGetter(n = n).get_data(player, TimeControl.rapid)
 
-    def not_a_computer(self, player_username: str) -> str:
+    def not_a_computer(self, player_username: str) -> bool:
         """
         Checks that player name doesn't contain the word computer to make sure I don't pick
         one of the chess.com AIs as the next player
         """
         return 'Computer' not in player_username
+
+    def not_a_guest(self, player_username: str) -> bool:
+        """
+        Checks that player name doesn't contain the word 'Guest' to make sure I don't pick
+        a guest as the next player
+        """
+        return 'Guest' not in player_username
+
+    def not_blacklisted(self, player_username: str) -> bool:
+        """
+        Checks that player is not an AI or guest etc
+        """
+        return self.not_a_computer(player_username) and self.not_a_guest(player_username)
 
 class RandomOpponentSelector(PlayerSelector):
     """
@@ -43,10 +56,16 @@ class RandomOpponentSelector(PlayerSelector):
         self.get_opponents(player)
 
         # Pick a random past opponent
-        username = random.choice(player.past_opponents["id"])
+        try:
+            username = random.choice(player.past_opponents["id"])
+        except IndexError as e:
+            print("IndexError in RandomOpponentSelector")
+            print(f"Player id: {player.get_username()}")
+            print(f"Past opponents list: {player.past_opponents['id']}")
+            username = 'FlyingMo0se'
 
         # Check user is not an AI
-        if self.not_a_computer(username):
+        if self.not_blacklisted(username):
             return username
         else:
             return RandomOpponentSelector().pick_next(player)
@@ -63,7 +82,7 @@ class HighestRatedOpponentSelector(PlayerSelector):
         username = player.past_opponents["id"][np.argmax(player.past_opponents["rating"])]
 
         # Check user is not an AI
-        if self.not_a_computer(username):
+        if self.not_blacklisted(username):
             return username
         else:
             return RandomOpponentSelector().pick_next(player)
@@ -88,7 +107,7 @@ class RandomHigherRatedOpponentSelector(PlayerSelector):
         username = random.choice(opponents)
 
         # Check user is not an AI
-        if self.not_a_computer(username):
+        if self.not_blacklisted(username):
             return username
         else:
             return RandomOpponentSelector().pick_next(player)
@@ -113,7 +132,7 @@ class RandomLowerRatedOpponentSelector(PlayerSelector):
         username = random.choice(opponents)
 
         # Check user is not an AI
-        if self.not_a_computer(username):
+        if self.not_blacklisted(username):
             return username
         else:
             return RandomOpponentSelector().pick_next(player)

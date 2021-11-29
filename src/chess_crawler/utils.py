@@ -3,7 +3,6 @@ Utility functions to be used with the chess crawler
 """
 import sqlalchemy as sal
 
-
 def delete_duplicate_entries_from_db(engine: sal.engine.Engine, table_name: str) -> None:
     """
     Deletes the entries with the same player_id from the database
