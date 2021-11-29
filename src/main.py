@@ -31,7 +31,7 @@ def main():
     data_getter = GetterPipeline(getters)
 
     # Define the discriminator that is used to decide if a player should be saved
-    discriminators = [NGamesDiscriminator(N = 1)]#, CheaterDiscriminator()]
+    discriminators = [NGamesDiscriminator(N = 50)]#, CheaterDiscriminator()]
     discr_pipeline = DiscriminatorPipeline(discriminators)
 
     # Define the saver pipeline

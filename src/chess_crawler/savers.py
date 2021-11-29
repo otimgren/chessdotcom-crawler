@@ -8,9 +8,7 @@ from typing import List
 
 import sqlalchemy as sal
 import pandas as pd
-from sqlalchemy import engine
 from sqlalchemy import MetaData, Table, Column, Integer, String
-from tqdm import tqdm
 
 from .getters import TimeControl
 from .player import Player
@@ -105,18 +103,18 @@ class ProfileSaver(DataSaver):
         data = {}
 
         # Get data from the player object
-        id = self.get_id(player)
+        id = player.get_id()
         data["row_id"] = 0
-        data["username"] = self.get_username(player)
-        data["jointime"] = self.get_jointime(player)
-        data["status"] = self.get_status(player)
-        data["puzzle_rush_best"] = self.get_best_puzzle_rush(player)
+        data["username"] = player.get_username()
+        data["jointime"] = player.get_jointime()
+        data["status"] = player.get_status()
+        data["puzzle_rush_best"] = player.get_best_puzzle_rush()
         for time_ctrl in TimeControl:
-            data[f"{time_ctrl.value}_rating"] = self.get_rating(player, time_ctrl)
-            data[f"{time_ctrl.value}_n_games"] = self.get_n_games(player, time_ctrl)
-        data["puzzle_rating"] = self.get_puzzle_rating(player)
-        data["n_puzzles"] = self.get_n_puzzles(player)
-        data["t_puzzles"] = self.get_t_puzzles(player)
+            data[f"{time_ctrl.value}_rating"] = player.get_rating(time_ctrl)
+            data[f"{time_ctrl.value}_n_games"] = player.get_n_games(time_ctrl)
+        data["puzzle_rating"] = player.get_puzzle_rating()
+        data["n_puzzles"] = player.get_n_puzzles()
+        data["t_puzzles"] = player.get_t_puzzles()
         data["retrievetime"] = int(time.time())
 
         index = pd.Index([id], name = 'id')
@@ -124,92 +122,6 @@ class ProfileSaver(DataSaver):
         # Make dictionary into dataframe and return it
         return pd.DataFrame(data = data, index = index)
         
-    def get_id(self, player: Player) -> str:
-        """
-        Get the user id of the player
-        """
-        return player.profile["player_id"]
-
-    def get_username(self, player: Player) -> str:
-        """
-        Get the username of the player
-        """
-        return player.profile["username"]
-
-    def get_jointime(self, player: Player) -> str:
-        """
-        Get the timestamp of when the player joined chess.com
-        """
-        return player.profile["joined"]
-
-    def get_status(self, player: Player) -> str:
-        """
-        Get the premium status of a player
-        """
-        return player.profile["status"]
-
-    def get_n_games(self, player: Player, time_ctrl: TimeControl) -> int:
-        """
-        Gets the number of games played with the specified time control.
-        """
-        key = 'chess_' + time_ctrl.value
-        try:
-            wins = player.basic_stats[key]['record']['win']
-            losses = player.basic_stats[key]['record']['loss']
-            draws = player.basic_stats[key]['record']['draw']
-
-            return wins + losses + draws
-
-        except KeyError as e:
-            # print(e)
-            # print(f"No {time_ctrl.value} games for {player.id}")
-            return 0
-
-    def get_rating(self, player: Player, time_ctrl: TimeControl) -> int:
-        """
-        Gets the rating of a player for the specified time control
-        """
-        key = 'chess_' + time_ctrl.value
-        try:
-            rating = player.basic_stats[key]['last']['rating']
-            return rating
-
-        except KeyError as e:
-            # print(e)
-            # print(f"No {time_ctrl.value} games for {player.id}")
-            return None
-
-    def get_best_puzzle_rush(self, player: Player) -> int:
-        """
-        Get the puzzle rush record of the player
-        """
-        try:
-            return player.basic_stats['puzzle_rush']['best']['score']
-        except KeyError:
-            return 0
-
-    def get_n_puzzles(self, player: Player) -> int:
-        """
-        Gets the number of puzzles attempted by the player
-        """
-        return player.puzzle_data.n
-
-    def get_t_puzzles(self, player: Player) -> int:
-        """
-        Gets the number of seconds spent on puzzle training by player
-        """
-        return player.puzzle_data.t
-
-    def get_puzzle_rating(self, player: Player) -> int:
-        """
-        Gets the current puzzle rating of the player
-        """
-        # Check that data exists for puzzles
-        if len(player.puzzle_data.ratings_df.rating) < 1:
-            return None
-
-        return player.puzzle_data.ratings_df.rating.iloc[-1]
-
 class TimeControlSaver(DataSaver):
     # to do
     pass

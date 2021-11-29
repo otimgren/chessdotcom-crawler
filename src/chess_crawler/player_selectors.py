@@ -7,8 +7,8 @@ from typing import List
 
 import numpy as np
 
-from .getters import ArchivedOpponentsGetter
-from .player import Player
+from .getters import ArchivedTimeCtrlOpponentsGetter
+from .player import Player, TimeControl
 
 class PlayerSelector(ABC):
     """
@@ -25,7 +25,14 @@ class PlayerSelector(ABC):
         """
         Find past opponents based on archival data
         """
-        ArchivedOpponentsGetter(n = n).get_data(player)
+        ArchivedTimeCtrlOpponentsGetter(n = n).get_data(player, TimeControl.rapid)
+
+    def not_a_computer(self, player_username: str) -> str:
+        """
+        Checks that player name doesn't contain the word computer to make sure I don't pick
+        one of the chess.com AIs as the next player
+        """
+        return 'Computer' not in player_username
 
 class RandomOpponentSelector(PlayerSelector):
     """
@@ -35,8 +42,14 @@ class RandomOpponentSelector(PlayerSelector):
         # Get the past opponents
         self.get_opponents(player)
 
-        # Pick a random past opponent and return the id
-        return random.choice(player.past_opponents["id"])
+        # Pick a random past opponent
+        username = random.choice(player.past_opponents["id"])
+
+        # Check user is not an AI
+        if self.not_a_computer(username):
+            return username
+        else:
+            return RandomOpponentSelector().pick_next(player)
 
 class HighestRatedOpponentSelector(PlayerSelector):
     """
@@ -47,7 +60,13 @@ class HighestRatedOpponentSelector(PlayerSelector):
         self.get_opponents(player)
 
         # Pick past opponent with highest rating
-        return player.past_opponents["id"][np.argmax(player.past_opponents["rating"])]
+        username = player.past_opponents["id"][np.argmax(player.past_opponents["rating"])]
+
+        # Check user is not an AI
+        if self.not_a_computer(username):
+            return username
+        else:
+            return RandomOpponentSelector().pick_next(player)
 
 class RandomHigherRatedOpponentSelector(PlayerSelector):
     """
@@ -61,9 +80,18 @@ class RandomHigherRatedOpponentSelector(PlayerSelector):
         index = np.array(player.past_opponents["rating"]) > player.get_rapid_rating()
         opponents = np.array(player.past_opponents["id"])[index]
 
+        # If list of opponents is empty, return a random opponent
+        if len(opponents) == 0:
+            return RandomOpponentSelector().pick_next(player)
 
-        # Pick past opponent with highest rating
-        return random.choice(opponents)
+        # Pick a past opponent with higher rating
+        username = random.choice(opponents)
+
+        # Check user is not an AI
+        if self.not_a_computer(username):
+            return username
+        else:
+            return RandomOpponentSelector().pick_next(player)
 
 class RandomLowerRatedOpponentSelector(PlayerSelector):
     """
@@ -77,9 +105,18 @@ class RandomLowerRatedOpponentSelector(PlayerSelector):
         index = np.array(player.past_opponents["rating"]) < player.get_rapid_rating()
         opponents = np.array(player.past_opponents["id"])[index]
 
+        # If list of opponents is empty, return a random opponent
+        if len(opponents) == 0:
+            return RandomOpponentSelector().pick_next(player) 
 
-        # Pick past opponent with highest rating
-        return random.choice(opponents)
+        # Pick a past opponent with lower rating
+        username = random.choice(opponents)
+
+        # Check user is not an AI
+        if self.not_a_computer(username):
+            return username
+        else:
+            return RandomOpponentSelector().pick_next(player)
 
 
 class HighestUntilSwitchSelector(PlayerSelector):
@@ -131,6 +168,10 @@ class HigherLowerSelector(PlayerSelector):
         self.lower_selector = RandomLowerRatedOpponentSelector()
 
     def pick_next(self, player: Player) -> str:
+        # Check if mode needs to be switched
+        self.check_rating(player)
+
+        # Pick next player
         if self.mode == 'higher':
             return self.higher_selector.pick_next(player)
         else:

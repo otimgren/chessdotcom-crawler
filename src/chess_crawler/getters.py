@@ -14,16 +14,8 @@ import requests
 
 from tqdm import tqdm
 
-from .player import Player
+from .player import Player, TimeControl
 
-class TimeControl(Enum):
-    """
-    Enumerator for different chess time controls
-    """
-    blitz = 'blitz'
-    bullet = 'bullet'
-    rapid = 'rapid'
-    daily = 'daily'
 
 @dataclass
 class TimeSeriesData:
@@ -99,7 +91,6 @@ class ArchivedOpponentsGetter(DataGetter):
         # Loop over the specified number of monthly archives
         for i in range(min(self.n, len(archives))):
             games = json.loads(requests.get(archives[-i]).text)['games']
-
             # Check if opponent was black or white
             for game in games:
                 if game["white"]["username"].lower() == player.profile["username"].lower():
@@ -114,6 +105,42 @@ class ArchivedOpponentsGetter(DataGetter):
         player.past_opponents["id"] = opponents
         player.past_opponents["rating"] = ratings
 
+@dataclass
+class ArchivedTimeCtrlOpponentsGetter(DataGetter):
+    """
+    Gets data about the past opponents of the player for a specific time control
+    """
+    n: int = 3 # Number of archive months to retrieve
+
+    def get_data(self, player: Player, time_ctrl: TimeControl) -> None:
+        archives = json.loads(requests.get(f'https://api.chess.com/pub/player/{player.id}/games/archives').text)['archives']
+        
+        # Container for opponents
+        opponents = []
+        ratings = []
+
+        # Loop over the specified number of monthly archives
+        for i in range(min(self.n, len(archives))):
+            games = json.loads(requests.get(archives[-i]).text)['games']
+
+            # Loop over archived games
+            for game in games:
+
+                # Check if time control was right
+                if game["time_class"] == time_ctrl.value:
+
+                    # Check if opponent was black or white
+                    if game["white"]["username"].lower() == player.profile["username"].lower():
+                        opponents.append(game["black"]["username"])
+                        ratings.append(game["black"]["rating"])
+
+                    else:
+                        opponents.append(game["white"]["username"])
+                        ratings.append(game["white"]["rating"])
+        
+        player.past_opponents = {}
+        player.past_opponents["id"] = opponents
+        player.past_opponents["rating"] = ratings
 class PuzzlesGetter(DataGetter):
     """
     Scrapes puzzle data for given player using the stats page of chess.com
@@ -131,7 +158,7 @@ class PuzzlesGetter(DataGetter):
         except IndexError as e:
             print("Error in PuzzlesGetter:")
             print(e)
-            print(f"Player: {player.username}")
+            print(f"Player: {player.id}")
 
         # Get the total number of puzzles solved
         n_puzzles = self.get_n_puzzles(soup)
@@ -249,7 +276,9 @@ class LiveGetter(DataGetter):
         except IndexError as e:
             print("Error in PuzzlesGetter:")
             print(e)
-            print(f"Player: {player.username}")
+            print("HTML soup:")
+            print(soup)
+            print(f"Player: {player.id}")
 
         # Extract number of games played
         n = self.get_n_games(soup)
