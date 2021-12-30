@@ -4,8 +4,8 @@ A crawler for exploring player profiles on [chess.com](https://www.chess.com/hom
 ## Getting started
 Before running the crawler you need to do a few things:
 - Clone/download the repo
-- Create a conda environment with the correct packages by running `conda create --file chess-crawler.yml` in the root folder of the repo
-- Make a MySQL database called `chess_crawler`. You can choose a different name, but need to change it in `main.py` also, line 15 `engine =...`. On the same line also need to provide username and password for an account with access to the database.
+- Create a conda environment with the correct packages by running `conda create --file chess-crawler.yml` in the root folder of the repo OR run `python setup.py install` in the base folder to install the `chess_crawler` package (this should install all the necessary packages also)
+- Install [MySQL](https://dev.mysql.com/downloads/installer/) and make a MySQL database called `chess_crawler`. You can choose a different name, but will need to change it in `main.py` also, line 15 `engine =...`. On the same line also need to provide username and password for an account with access to the database.
 
 After that can run `python main.py` in the `/chess_crawler/src` folder to run the crawler.
 
