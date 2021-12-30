@@ -1,5 +1,5 @@
 # chessdotcom-crawler
-A crawler for exploring player profiles on chess.com and saving them to a MySQL database.
+A crawler for exploring player profiles on [chess.com](https://www.chess.com/home) and saving them to a MySQL database.
 
 ## Getting started
 Before running the crawler you need to do a few things:
