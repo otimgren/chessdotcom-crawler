@@ -48,7 +48,7 @@ def main():
 
     # Run the crawler
     crawler.run(data_getter, discr_pipeline, saver_pipeline, player_selector,
-                n_players = 1000)#, player=Player(id='FlyingMo0se'))
+                n_players = 100)#, player=Player(id='FlyingMo0se'))
 
 if __name__ == "__main__":
     main()
