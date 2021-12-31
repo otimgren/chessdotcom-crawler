@@ -1,6 +1,9 @@
 """
 Utility functions to be used with the chess crawler
 """
+from typing import List
+
+import pandas as pd
 import sqlalchemy as sal
 
 def delete_duplicate_entries_from_db(engine: sal.engine.Engine, table_name: str) -> None:
@@ -23,3 +26,15 @@ def delete_duplicate_entries_from_db(engine: sal.engine.Engine, table_name: str)
     # exectute the command
     with engine.begin() as conn:
         conn.execute(sql_text)
+
+def get_usernames(engine: sal.engine.Engine) -> List[str]:
+    """
+    Gets the unique usernames in the 'profiles' table and returns them as a list
+    """
+    with engine.connect() as conn:
+        df = pd.read_sql_table('profiles', conn)
+
+    # Remove duplicates of the same user
+    df.drop_duplicates(subset = 'id', inplace = True)
+
+    return df.username.tolist()

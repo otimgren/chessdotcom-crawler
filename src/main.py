@@ -7,7 +7,7 @@ from chess_crawler.getters import (ProfileGetter, PuzzlesGetter, LiveGetter, Dai
                                     BasicStatsGetter, ArchivedOpponentsGetter, GetterPipeline)
 from chess_crawler.player import Player
 from chess_crawler.player_selectors import HigherLowerSelector
-from chess_crawler.savers import ProfileSaver, SaverPipeline
+from chess_crawler.savers import ProfileSaver, SaverPipeline, TimeControlSaver
 
 
 def main():
@@ -36,19 +36,27 @@ def main():
 
     # Define the saver pipeline
     savers = [
-        ProfileSaver(table_name = 'profiles', engine = engine)
+        ProfileSaver(table_name = 'profiles', engine = engine),
+        TimeControlSaver(engine=engine, time_ctrl = TimeControl.rapid),
+        TimeControlSaver(engine=engine, time_ctrl = TimeControl.bullet),
+        TimeControlSaver(engine=engine, time_ctrl = TimeControl.blitz)
     ]
     saver_pipeline = SaverPipeline(savers)
 
     # Define the picker that is used to pick the next player
     player_selector = HigherLowerSelector()
 
-    # Define the crawler
-    crawler = Crawler(database_name='chess_crawler', engine=engine)
+    player = Player('FlyingMo0se')
+
+    data_getter.get_data(player)
+    saver_pipeline.save_data(player)
+
+    # # Define the crawler
+    # crawler = Crawler(database_name='chess_crawler', engine=engine)
 
     # Run the crawler
-    crawler.run(data_getter, discr_pipeline, saver_pipeline, player_selector,
-                n_players = 100)#, player=Player(id='FlyingMo0se'))
+    # crawler.run(data_getter, discr_pipeline, saver_pipeline, player_selector,
+    #             n_players = 100)#, player=Player(id='FlyingMo0se'))
 
 if __name__ == "__main__":
     main()

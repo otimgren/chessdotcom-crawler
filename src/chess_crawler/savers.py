@@ -9,6 +9,7 @@ from typing import List
 import sqlalchemy as sal
 import pandas as pd
 from sqlalchemy import MetaData, Table, Column, Integer, String
+from sqlalchemy_utils.functions.orm import table_name
 
 from .getters import TimeControl
 from .player import Player
@@ -18,7 +19,6 @@ class DataSaver(ABC):
     """
     Abstract parent class for saving data
     """
-    table_name: str
     engine: sal.engine.Engine
 
     @abstractmethod
@@ -47,10 +47,12 @@ class SaverPipeline:
         for saver in self.savers:
             saver.save_data(player)
 
+@dataclass
 class ProfileSaver(DataSaver):
     """
     Used to save basic info about a player profile into a MySQL database
     """
+    table_name: str
     def save_data(self, player: Player) -> None:
         # Gather data into dataframe
         df = self.gather_data(player)
@@ -121,8 +123,51 @@ class ProfileSaver(DataSaver):
 
         # Make dictionary into dataframe and return it
         return pd.DataFrame(data = data, index = index)
-        
+
+@dataclass
 class TimeControlSaver(DataSaver):
-    # to do
-    pass
+    """
+    Used to save time series data for different time controls
+    """
+    time_ctrl: TimeControl
+    def save_data(self, player: Player) -> None:
+        # Gather data into dataframe
+        df = self.gather_data(player)
+
+        # Figure out the name for the table
+        table_name = self.time_ctrl.value +'_'+ player.get_username()
+
+        # Check that table is initialized, if not, initialize it
+        if not self.engine.has_table(table_name):
+            self.init_table(table_name)
+
+        # Save dataframe into SQL database
+        df.to_sql(table_name, self.engine, if_exists = 'replace')
+
+    def init_table(self, table_name: str) -> None:
+        """
+        Initializes the table in which data is saved
+        """
+        # Initialize MetaData object
+        meta = MetaData()
+
+        # Define the table
+        table = Table(table_name, meta,
+            Column('timestamp', Integer, primary_key = True),
+            Column('rating', Integer),
+        )
+
+        meta.create_all(self.engine)
+
+    def gather_data(self, player: Player) -> pd.DataFrame:
+        """
+        Gathers the timeseries data for the time control to a pandas dataframe 
+        """
+        # Figure out the name for the data we want
+        data_name = self.time_ctrl.value + "_data"
+        
+        # Return the data
+        return getattr(player, data_name).ratings_df
+
+    
 

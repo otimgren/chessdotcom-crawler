@@ -172,7 +172,7 @@ class HighestUntilSwitchSelector(PlayerSelector):
 class HigherLowerSelector(PlayerSelector):
     """
     Uses the RandomHigherRatedSelector selector until a specified rating, and then starts using
-    RandomLowerRaterdSelector.
+    RandomLowerRatedSelector.
     """
     def __init__(self, high_rating = 2400, low_rating = 600):
         # Store the ratings at which selection strategy is switched
@@ -207,3 +207,16 @@ class HigherLowerSelector(PlayerSelector):
 
         elif rating < self.low_rating and self.mode == 'lower':
             self.mode = 'higher'
+
+class ListSelector(PlayerSelector):
+    """
+    Select next player based on a list
+    """
+    def __init__(self, player_list: List[str]) -> None:
+        super().__init__()
+        self.player_list = player_list
+
+    def pick_next(self, player: Player) -> str:
+        # Return the first player in the list and remove the player from the list
+        return self.player_list.pop(0)
+
